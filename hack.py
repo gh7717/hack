@@ -51,7 +51,7 @@ def getClusterInfo(id = 4):
 
     return (id, cluster_attributes)
 
-def main():    
+def main():
     id = chooseCluster()
     id, cluster = getClusterInfo(id)
     try:
@@ -60,9 +60,12 @@ def main():
         print "Error"
         sys.exit(1)
     cluster['access']['password']['value'] = passwd
-    set_cluster_data = 'sudo -u postgres -H -- psql -d nailgun -c \"update attributes set editable = %s where id = %d;\"' % (str(cluster), id)
-    cluster_data = subprocess.Popen(set_cluster_data, shell=True, stdout=subprocess.PIPE)
+    set_cluster_data = ''' sudo -u postgres -H -- psql -d nailgun -c \"update attributes set editable = %s where id = %d;\" ''' % ('"' + str(cluster) + '"', id)
+
+    print set_cluster_data
+#    cluster_data = subprocess.Popen(set_cluster_data, shell=True, stdout=subprocess.PIPE)
 #    print yaml.safe_dump(cluster)
+
 
 if __name__ == "__main__":
     main()
