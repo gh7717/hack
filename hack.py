@@ -1,33 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
 import subprocess
-import yaml
-import pycurl
 import sys
-from sqlalchemy import create_engine
+import httplib
+import urllib2
 
-
-def curlRequest(url):
-    class ContentCallback:
-         def __init__(self):
-            self.contents = ''
-         def content_callback(self, buf):
-            self.contents = self.contents + buf
-
-    t = ContentCallback()
-    try:
-        info = pycurl.Curl()
-        info.setopt(info.URL, url)
-        info.setopt(info.WRITEFUNCTION, t.content_callback)
-        info.perform()
-        info.close()
-    except ValueError:
-        print "Error: %s - not found" %url
-    return yaml.load(t.contents)
-
+from nailgun.db.sqlalchemy.models import cluster
+from nailgun.db import db
+from nailgun import utils as hlp
+import json
 
 def chooseCluster():
-    clusters = curlRequest('http://127.0.0.1:8000/api/v1/clusters/')
+    json_clusters = urllib2.urlopen('http://127.0.0.1:8000/api/v1/clusters/').read()
+    clusters = json.loads(json_clusters)
     print "You have get %d clusters:" % len(clusters)
     print "ID\t| name \t| mode \t| network type \t"
     for i in clusters:
@@ -40,18 +25,25 @@ def chooseCluster():
         print "ID is not number"
         sys.exit(1)
 
-def getClusterInfo(id = 4):
+def getClusterInfo(id):
 
-    clusters = curlRequest('http://127.0.0.1:8000/api/v1/clusters/')
-    attributes = curlRequest('http://127.0.0.1:8000/api/v1/clusters/%d/attributes/' % id)
-    #print yaml.safe_dump(attributes)
+    json_attributes = json.loads(urllib2.urlopen('http://127.0.0.1:8000/api/v1/clusters/%d/attributes/' % id).read())
+    #try:
+    #    cluster_attributes = json_attributes['editable']
+    #except:
+    #    print "Incorect cluster date"
+    #    sys.exit(1)
+
+    return (id, json_attributes)
+    
+def load_data(id, data):
     try:
-        cluster_attributes = attributes['editable']
+        db().query(cluster.Attributes).filter_by(cluster_id=int(id)).update(data)
+        db().commit()
     except:
-        print "Incorect cluster date"
-        sys.exit(1)
+        db().rollback()
 
-    return (id, cluster_attributes)
+        raise
 
 def main():
     id = chooseCluster()
@@ -61,19 +53,8 @@ def main():
     except:
         print "Error"
         sys.exit(1)
-    cluster['access']['password']['value'] = passwd
-    engine = create_engine('postgresql://nailgun:nailgun@localhost/nailgun', echo = True)
-    with engine.connect() as conn:
-        print conn.execute("SELECT id,name,mac FROM nodes;")
-#    f = file('./run', 'w')
-#    test = "update attributes set editable = %s where id = %d;" % ('"' + str(cluster) + '"', id)
-#    f.write(test)
-#    f.close()
-#    set_cluster_data = ''' sudo -u postgres -H -- psql -d nailgun -f './run''' #\"update attributes set editable = %s where id = %d;\" ''' % ('"' + str(cluster) + '"', id)
-
-#    print set_cluster_data
-#    cluster_data = subprocess.Popen(set_cluster_data, shell=True, stdout=subprocess.PIPE)
-#    print yaml.safe_dump(cluster)
+    cluster['editable']['access']['password']['value'] = passwd
+    load_data(id, cluster)
 
 if __name__ == "__main__":
     main()
