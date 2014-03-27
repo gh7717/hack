@@ -4,6 +4,8 @@ import subprocess
 import yaml
 import pycurl
 import sys
+from sqlalchemy import create_engine
+
 
 def curlRequest(url):
     class ContentCallback:
@@ -60,12 +62,18 @@ def main():
         print "Error"
         sys.exit(1)
     cluster['access']['password']['value'] = passwd
-    set_cluster_data = ''' sudo -u postgres -H -- psql -d nailgun -c \"update attributes set editable = %s where id = %d;\" ''' % ('"' + str(cluster) + '"', id)
+    engine = create_engine('postgresql://nailgun:nailgun@localhost/nailgun', echo = True)
+    with engine.connect() as conn:
+        print conn.execute("SELECT id,name,mac FROM nodes;")
+#    f = file('./run', 'w')
+#    test = "update attributes set editable = %s where id = %d;" % ('"' + str(cluster) + '"', id)
+#    f.write(test)
+#    f.close()
+#    set_cluster_data = ''' sudo -u postgres -H -- psql -d nailgun -f './run''' #\"update attributes set editable = %s where id = %d;\" ''' % ('"' + str(cluster) + '"', id)
 
-    print set_cluster_data
+#    print set_cluster_data
 #    cluster_data = subprocess.Popen(set_cluster_data, shell=True, stdout=subprocess.PIPE)
 #    print yaml.safe_dump(cluster)
-
 
 if __name__ == "__main__":
     main()
