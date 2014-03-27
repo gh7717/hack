@@ -5,10 +5,11 @@ import sys
 import httplib
 import urllib2
 
-from nailgun.db.sqlalchemy.models import cluster
+#from nailgun.db.sqlalchemy.models import cluster
+from nailgun.api.models import cluster
 from nailgun.db import db
-from nailgun import utils as hlp
-import json
+#from nailgun import utils as hlp
+
 
 def chooseCluster():
     json_clusters = urllib2.urlopen('http://127.0.0.1:8000/api/v1/clusters/').read()
