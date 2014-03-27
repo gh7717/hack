@@ -9,7 +9,7 @@ import urllib2
 from nailgun.api.models import cluster
 from nailgun.db import db
 #from nailgun import utils as hlp
-
+import json
 
 def chooseCluster():
     json_clusters = urllib2.urlopen('http://127.0.0.1:8000/api/v1/clusters/').read()
